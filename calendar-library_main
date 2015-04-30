@@ -1,0 +1,735 @@
+/*
+			--------------------------------------------------------------------------------------------
+			CALENDAR COMPONENT -	1.0
+			Please DO NOT MODIFY Contents of this File
+			
+			File: Calendar Component Main JS
+			--------------------------------------------------------------------------------------------
+			Written By: Sahil Madan
+			Email: madansahil90@gmail.com
+			--------------------------------------------------------------------------------------------
+			Modifications
+				
+				|-----------------------------------------------------------------------------------------------	|
+				|	Sr.	|	Modification						|	Date										|	Author				|
+				|	1. 	|	Written Whole Library 		|	Saturday, ‎April ‎12, ‎2014		|	Sahil Madan		|
+				|	2.		|	a. Added Comments			|	Friday, 27 June, 2014			|	Sahil Madan		|
+				|			|	b. Done Optimization		|													|								|
+				|			|	c. Renamed Variables		|													|								|
+				|	3.		|	a. Output Date Format 		|	Saturday, 28 June, 2014		|	Sahil Madan		|
+				|			|	added									|													|								|
+				|			|	b. Added Change Date		|													|								|
+				|	4.		|	Fixed minor Errors			|	Sunday, 29 June, 2014			|	Sahil Madan		|
+				|	5.		|	Changed Drawing dates	|	Wednesday, 02 July, 2014	|	Sahil Madan		|				
+				|			|	logic									|													|								|
+				|-----------------------------------------------------------------------------------------------	|
+						
+			Future Enhancements
+				
+				|-----------------------------------------------------------------------------------------------	|
+				|	Sr.	|	Enhancement						|	Status																		|
+				|	1.		|	XML Configuration			|	Planned																	|
+				|-----------------------------------------------------------------------------------------------	|
+*/
+
+/*	Default Configuration Parameters	*/
+var DEFAULT_DATE_FORMAT = "D M, Y";
+var MENU_HEADER_CLASS = "";
+var CALENDAR_HEADER_CLASS = "";
+var CALENDAR_CLASS = "";
+var LIST_VIEW_CLASS = "";
+var CALENDAR_STANDARD = 1;
+var CELL_SPACING = 0;
+var CELL_PADDING = 5;
+var CALENDAR_BORDER = 0;
+var INACTIVE_DAYS_COLOR = "#999";
+var LEFT_ARROW_ICON = "";
+var RIGHT_ARROW_ICON = "";
+var TODAY_ICON = "";
+var PREVIOUS_HIGHLIGHTED_DATE = -1;
+var PREVIOUS_SELECTED_MONTH = -1;
+var PREVIOUS_SELECTED_YEAR = -1;
+
+var isMonthsListOpen=false;
+var isYearsListOpen=false;
+
+var scrollPositionMonth = 0;
+var scrollPositionYear = 0;
+
+var userDateFormat = DEFAULT_DATE_FORMAT;
+
+var calendarHeadContainer;
+var calendarContainer;
+var textBoxObject;
+
+/*	Current Date Object	*/
+var GLOBAL_CURRENT_DATE = new Date();
+
+/*	Current Month from System Date */
+var CURRENT_MONTH = GLOBAL_CURRENT_DATE.getMonth()
+
+/*	Current Year from System Date	*/
+var CURRENT_YEAR = GLOBAL_CURRENT_DATE.getFullYear();
+
+/*	CONTENT Variable holds Final Result in String Format	*/
+var CONTENT="";
+
+/*	Store the Current Date Object in TODAY Variable	*/
+var TODAY = new Date();
+
+/*	MONTH_NAMES_CONTAINER has all the Month Names	*/
+var MONTH_NAMES_CONTAINER = new Array("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December");
+
+function setOutputDateFormat(FORMAT_USER)
+{
+		userDateFormat = FORMAT_USER;
+}
+
+function setCSSClass( MENU_HEADER_CLASS_USER, CALENDAR_HEADER_CLASS_USER, CALENDAR_CLASS_USER, LIST_VIEW_CLASS_USER )
+{
+	MENU_HEADER_CLASS = MENU_HEADER_CLASS_USER;
+	CALENDAR_HEADER_CLASS = CALENDAR_HEADER_CLASS_USER;
+	CALENDAR_CLASS = CALENDAR_CLASS_USER;
+	LIST_VIEW_CLASS = LIST_VIEW_CLASS_USER;
+}
+
+function setCalendarStandard(CALENDAR_STANDARD_USER)
+{
+	CALENDAR_STANDARD = CALENDAR_STANDARD_USER;
+}
+
+
+function setCalendarTableLayout(CELL_SPACING_USER, CELL_PADDING_USER, CALENDAR_BORDER_USER)
+{	
+	/*	
+		Table Confuguration
+			1. Table Class
+			2. Cellspacing
+			3.	Cellpadding
+			4. Table Border
+	 */
+	CELL_SPACING = CELL_SPACING_USER;
+	CELL_PADDING = CELL_PADDING_USER;
+	CALENDAR_BORDER =  CALENDAR_BORDER_USER;
+}
+
+function setInactiveDaysColor(INACTIVE_DAYS_COLOR_USER)
+{
+	INACTIVE_DAYS_COLOR = INACTIVE_DAYS_COLOR_USER;
+}
+
+function setCalendarIcons(LEFT_ARROW_ICON_USER, RIGHT_ARROW_ICON_USER, TODAY_ICON_USER)
+{
+	LEFT_ARROW_ICON = LEFT_ARROW_ICON_USER;
+	RIGHT_ARROW_ICON = RIGHT_ARROW_ICON_USER;
+	TODAY_ICON = TODAY_ICON_USER;
+}
+
+function setTextBoxObject(textBoxObjectUser)
+{
+	textBoxObject = textBoxObjectUser;
+}
+
+function setCalendarHeadContainer(calendarHeadContainerUser)
+{
+	calendarHeadContainer = calendarHeadContainerUser;
+}
+
+function setCalendarContainer(calendarContainerUser)
+{
+	calendarContainer = calendarContainerUser;
+}
+
+/*	
+	--------------------------------------------------------------------------------
+	Private Functions to be Used By Library
+	--------------------------------------------------------------------------------	
+*/
+function checkDateFormat(DATE_FORMAT)
+{
+	var count = 0;
+	for(var i=0; i< DATE_FORMAT.length; i++)
+	{
+		if(DATE_FORMAT.charAt(i) == "d" || DATE_FORMAT.charAt(i) == "D" || DATE_FORMAT.charAt(i) == "m" || DATE_FORMAT.charAt(i) == "M" || DATE_FORMAT.charAt(i) == "y" || DATE_FORMAT.charAt(i) == "Y")
+		{
+			count++;	
+		}
+	}
+	if(count>0)
+	{
+		return true;	
+	}
+	return false
+}
+
+function parseDate(DATE)
+{
+	var TEMP_DATE = new Date(DATE);
+	var dateString = userDateFormat;
+
+	if(!checkDateFormat(dateString))
+	{
+		dateString = DEFAULT_DATE_FORMAT;
+	}
+	
+	var d_count = 0;
+	var m_count = 0;
+	var y_count = 0;
+	var small_d_count = 0;
+	var small_m_count = 0;
+	var small_y_count = 0;
+	
+	var newDateFormat = "";
+	for(i = 0; i < dateString.length+1; i++)
+	{
+		if(dateString.charAt(i) == "D")
+		{
+			d_count++;		
+		}
+		else if(dateString.charAt(i) == "M")
+		{
+			m_count++;			
+		}
+		else if(dateString.charAt(i) == "Y")
+		{
+			y_count++;				
+		}
+		else if(dateString.charAt(i) == "d")
+		{
+			small_d_count++;
+		}
+		else if(dateString.charAt(i) == "m")
+		{
+			small_m_count++;
+		}
+		else if(dateString.charAt(i) == "y")
+		{
+			small_y_count++;
+		}
+		else
+		{
+			if(d_count!=0)
+			{		
+				for(k=0; k< d_count; k++)
+				{
+					if(TEMP_DATE.getDate()<10)
+					{
+						newDateFormat += "0"+(TEMP_DATE.getDate());
+					}
+					else
+					{
+						newDateFormat += (TEMP_DATE.getDate());
+					}
+				}
+				d_count=0;
+			}
+			if(m_count != 0)
+			{	
+				for(k=0; k< m_count; k++)
+				{
+					newDateFormat += getMonthName(TEMP_DATE.getMonth());
+				}
+				m_count=0;
+			}
+			if(y_count != 0)
+			{
+				for(k=0; k< y_count; k++)
+				{
+						newDateFormat += TEMP_DATE.getFullYear();
+				}
+				y_count=0;	
+			}
+			if(small_d_count != 0)
+			{	
+				for(k=0; k< small_d_count; k++)
+				{
+					newDateFormat += TEMP_DATE.getDate();
+				}
+				small_d_count=0;
+			}
+			if(small_m_count != 0)
+			{	
+				for(k=0; k< small_m_count; k++)
+				{
+					if(TEMP_DATE.getMonth()<10)
+					{
+						newDateFormat += "0"+(TEMP_DATE.getMonth()+1);
+					}
+					else
+					{
+						newDateFormat += (TEMP_DATE.getMonth()+1);
+					}
+				}
+				small_m_count=0;
+			}
+			if(small_y_count != 0)
+			{	
+				for(k=0; k< small_y_count; k++)
+				{
+					var yStr = TEMP_DATE.getFullYear()+"";
+					yStr = yStr.substring(2, yStr.length);
+					newDateFormat += yStr;
+				}
+				small_y_count=0;
+			}	
+			newDateFormat += dateString.charAt(i);		
+		}
+	}
+	return newDateFormat;
+}
+
+function returnDate(DATE)
+{
+	var RETURN_DATE_STRING = parseDate(DATE);
+	textBoxObject.value= RETURN_DATE_STRING;
+}
+
+/*	Function Calculates Total Days in an Month	*/
+function getTotalDaysInMonth(MONTH, YEAR)
+{
+	if ( MONTH == 1 )
+	{
+		if ( YEAR % 4 == 0 )
+		{
+			return 29;
+		}
+		else
+		{
+			return 28;
+		}
+	}
+	else if ( MONTH != 3 && MONTH != 5 && MONTH != 8 && MONTH != 10 )
+	{
+		return 31;
+	}
+	else
+	{
+		return 30;
+	}
+	return 0;
+}
+
+/*	Get the Month Name	*/
+function getMonthName(INDEX)
+{
+	return MONTH_NAMES_CONTAINER[INDEX];
+}
+
+/*	
+	OLD Function to draw Dates
+	This function is Depricated
+*/
+function drawDates(startDatePreviousMonth, maxDaysPrevMonth, totalLoopLength, currmonth, curryear)
+{
+	/*	
+		Main Logic
+		DO NOT MODIFY	
+	*/
+	var m=0;
+	for(var i=startDatePreviousMonth; i<=(totalLoopLength); i++)
+	{
+		if(i<=maxDaysPrevMonth)
+		{
+			/*	INACTIVE DAYS | Previous Month	*/						
+			CONTENT+= "<td onclick = 'changeCalendarDate(-1)' style='color:"+INACTIVE_DAYS_COLOR+"' align='center'>"+i+"</td>";
+		}
+		else if(i>maxDaysPrevMonth)
+		{
+			CONTENT+= "<td onclick=\"returnDate(this.id)\" lang='"+(i-maxDaysPrevMonth)+"' id = '"+(i-maxDaysPrevMonth)+" "+getMonthName(currmonth)+", "+ curryear+ "' align='center' style='font-weight:Bold;";
+			if(Math.abs(maxDaysPrevMonth-i) == TODAY.getDate() && (currmonth==TODAY.getMonth() && curryear == TODAY.getFullYear()))
+			{
+				CONTENT+="'><u>"+Math.abs(maxDaysPrevMonth-i)+"</u>";
+			}
+			else
+			{
+				CONTENT+= "'>"+Math.abs(maxDaysPrevMonth-i);
+			}
+			CONTENT+="</td>";
+		}
+		m++;
+		if(m>=7)
+		{
+			CONTENT+= "</tr><tr>";
+			m=0;
+		}
+		if(i==totalLoopLength && m != 0)
+		{
+			for(var j=1; j<=(7-m); j++)
+			{
+				/*	INACTIVE DAYS | Successor Month	*/
+				CONTENT += "<td onclick = 'changeCalendarDate(1)' style='color:"+INACTIVE_DAYS_COLOR+"' align='center'>"+j+"</td>";
+			}
+		}
+	}
+}
+
+function changeCalendarDate(DIRECTION)
+{	
+	textBoxObject.value = "";
+	if(DIRECTION == 1)
+	{
+		//Move Right
+		if(CURRENT_MONTH<11)
+		{
+			CURRENT_MONTH++;
+		}
+		else
+		{
+			CURRENT_MONTH=0;
+			CURRENT_YEAR++;
+		}
+	}
+	else	 if(DIRECTION == -1)
+	{
+		//Move Left
+		if(CURRENT_MONTH>0)
+		{
+			CURRENT_MONTH--;
+		}
+		else
+		{
+			CURRENT_MONTH=11;
+			CURRENT_YEAR--;
+		}
+	}
+	else
+	{
+		//reset date
+		CURRENT_MONTH = GLOBAL_CURRENT_DATE .getMonth();
+		CURRENT_YEAR = GLOBAL_CURRENT_DATE .getFullYear();
+		returnDate(GLOBAL_CURRENT_DATE .getDate()+" "+ getMonthName(CURRENT_MONTH) +", "+CURRENT_YEAR);
+	}
+	document.getElementById("currentMonthDivObject").innerHTML = getMonthName(CURRENT_MONTH).substr(0,3).toUpperCase();
+	document.getElementById("currentYearDivObject").innerHTML = CURRENT_YEAR;	
+	
+	setBGForMonthObjectSelected("monthNameTableDefObject"+CURRENT_MONTH);
+	setBGForYearObjectSelected("yearValueTableDefObject"+CURRENT_YEAR);
+	
+	closeMonthsList();
+	closeYearsList();
+//	drawCalendar(CURRENT_MONTH, CURRENT_YEAR);
+}
+
+function openMonthsList()
+{
+	if(isMonthsListOpen == false)
+	{
+		closeYearsList();
+		isMonthsListOpen = true;
+		document.getElementById("monthsListDivObject").style.display = "";
+		document.getElementById("monthsListDivObject").scrollTop = scrollPositionMonth/100 * document.getElementById("monthsListDivObject").scrollHeight;	
+	}
+	else if(isMonthsListOpen == true)
+	{
+		isMonthsListOpen = false;
+		closeMonthsList();
+	}
+}
+
+function openYearsList()
+{	
+	if(isYearsListOpen == false)
+	{
+		isYearsListOpen = true;
+		closeMonthsList();
+		document.getElementById("yearsListDivObject").style.display = "";
+		document.getElementById("yearsListDivObject").scrollTop = scrollPositionYear/100 * document.getElementById("yearsListDivObject").scrollHeight;
+	}
+	else if(isYearsListOpen == true)
+	{
+		isYearsListOpen = false
+		closeYearsList();
+	}
+}
+
+function closeMonthsList()
+{	
+	isMonthsListOpen = false;
+	document.getElementById("monthsListDivObject").style.display = "none";
+}
+
+function closeYearsList()
+{
+	isYearsListOpen = false;
+	document.getElementById("yearsListDivObject").style.display = "none";
+}
+
+function highlightDate(ID)
+{
+	if(isYearsListOpen)
+	{
+		closeYearsList();
+	}
+	if(isMonthsListOpen)
+	{
+		closeMonthsList();
+	}
+	if(PREVIOUS_HIGHLIGHTED_DATE != -1)
+	{
+		document.getElementById(PREVIOUS_HIGHLIGHTED_DATE).style.background="";
+	}
+	document.getElementById(ID).style.background="#d5d5d5";
+	PREVIOUS_HIGHLIGHTED_DATE = ID;
+}
+
+function setBGForMonthObjectSelected(ID)
+{
+	if(PREVIOUS_SELECTED_MONTH != -1)
+	{
+		document.getElementById("monthNameTableDefObject"+PREVIOUS_SELECTED_MONTH ).style.background = "";		
+	}
+	document.getElementById(ID).style.background = "#CCC";
+	document.getElementById("currentMonthDivObject").innerHTML = document.getElementById(ID).innerHTML;	
+	PREVIOUS_SELECTED_MONTH = Number(ID.replace("monthNameTableDefObject",""));
+	CURRENT_MONTH = Number(ID.replace("monthNameTableDefObject",""));
+	scrollPositionMonth = (CURRENT_MONTH / MONTH_NAMES_CONTAINER.length) * 100;
+	drawCalendar(CURRENT_MONTH, CURRENT_YEAR);
+}
+
+function setBGForYearObjectSelected(ID)
+{
+	var yearDifference = Number(document.getElementById(ID).innerHTML)-1970;
+	if(PREVIOUS_SELECTED_YEAR != -1)
+	{
+		document.getElementById("yearValueTableDefObject"+PREVIOUS_SELECTED_YEAR ).style.background = "";
+	}
+	document.getElementById(ID).style.background = "#CCC";
+	PREVIOUS_SELECTED_YEAR = Number(document.getElementById("currentYearDivObject").innerHTML);
+	document.getElementById("currentYearDivObject").innerHTML = document.getElementById(ID).innerHTML;	
+	CURRENT_YEAR = document.getElementById("currentYearDivObject").innerHTML;
+	scrollPositionYear = (yearDifference / 130) * 100;
+	drawCalendar(CURRENT_MONTH, CURRENT_YEAR);
+}
+
+/*	
+	--------------------------------------------------------------------------------
+	Public Function Accesible to User
+	--------------------------------------------------------------------------------	
+*/
+
+function drawCalendarHeader()
+{
+	//menu-header
+	var MENU_HEADER = "<table width='100%' ";
+	MENU_HEADER += "class = '"+MENU_HEADER_CLASS+"' ";	
+	MENU_HEADER += "cellspacing = '0' ";
+	MENU_HEADER += "cellpadding = '0' ";	
+	MENU_HEADER += "border = '0' >";
+	MENU_HEADER += "<tr>";
+	MENU_HEADER += "<td>";
+	if( LEFT_ARROW_ICON == "" )
+	{
+		MENU_HEADER += "<input type='button' onclick='changeCalendarDate(-1)' value='<' />";
+	}
+	else
+	{
+		MENU_HEADER += "<img style ='vertical-align:middle' src = '"+LEFT_ARROW_ICON+"' width='20' onclick ='changeCalendarDate(-1)' / >";
+	}
+	if( RIGHT_ARROW_ICON == "" )
+	{
+		MENU_HEADER += "<input type='button' onclick='changeCalendarDate(1)' value='>' />";
+	}
+	else
+	{
+		MENU_HEADER += "<img style ='vertical-align:middle' src = '"+RIGHT_ARROW_ICON+"' width='20' onclick ='changeCalendarDate(1)' / >";
+	}
+	if( TODAY_ICON == "" )
+	{
+		MENU_HEADER += "<input type='button' onclick='changeCalendarDate(0)' value='T' />";
+	}
+	else
+	{
+		MENU_HEADER += "<img style ='vertical-align:middle' src = '"+TODAY_ICON+"' width='20' onclick ='changeCalendarDate(0)' / >";
+	}
+	MENU_HEADER += "</td>";
+	
+	//Month Selector
+	MENU_HEADER += "<td>";	
+	MENU_HEADER += "<div onclick='openMonthsList()' style='width:70px; border:1px solid;text-align:center; cursor:pointer;'>";
+	MENU_HEADER += "<div style='padding:3px;' id='currentMonthDivObject'>"+getMonthName(CURRENT_MONTH).substr(0,3).toUpperCase()+"</div>";
+	MENU_HEADER += "</div>";	
+	
+	MENU_HEADER += "<div id='monthsListDivObject' style='width:70px; border:1px solid;border-top:0;text-align:left; cursor:pointer; position:absolute; background:#FFF; height:170px; overflow-y: auto;display:none'>";
+	MENU_HEADER += "<table id='monthsListView' class ='"+LIST_VIEW_CLASS+"' width='100%' cellspacing=0 cellpadding =0 border=0>";
+	var totalMonthCount= 0;
+	for(var i = 0; i < MONTH_NAMES_CONTAINER.length; i++)
+	{	
+		MENU_HEADER += "<tr>";
+		MENU_HEADER += "<td onclick='setBGForMonthObjectSelected(this.id);closeMonthsList()' id='monthNameTableDefObject"+i+"' style='";
+		if(CURRENT_MONTH == i)
+		{
+			scrollPositionMonth += (totalMonthCount / MONTH_NAMES_CONTAINER.length) * 100;
+			MENU_HEADER += "background:#CCC;' ";
+		}
+		else
+		{
+			totalMonthCount++;
+			MENU_HEADER += "' ";
+		}
+		MENU_HEADER +=	">"+MONTH_NAMES_CONTAINER[i].substr(0,3).toUpperCase()+"</td>";
+		MENU_HEADER += "</tr>";
+	}
+	MENU_HEADER += "</table>"
+	MENU_HEADER += "</div>";	
+	MENU_HEADER += "</td>";
+	
+	//Year Selector
+	MENU_HEADER += "<td>";	
+	MENU_HEADER += "<div onclick = 'openYearsList()' style='width:70px; border:1px solid;text-align:center; cursor:pointer'>";
+	MENU_HEADER += "<div style='padding:3px;' id='currentYearDivObject'>"+CURRENT_YEAR+"</div>";
+	MENU_HEADER += "</div>";	
+	
+	MENU_HEADER += "<div id='yearsListDivObject' style='width:70px; border:1px solid;border-top:0;cursor:pointer; position:absolute; background:#FFF; height:170px; overflow-y: auto; display:none'>";
+	MENU_HEADER += "<table id='yearsListView' class ='"+LIST_VIEW_CLASS+"' width='100%' cellspacing=0 cellpadding =0 border=0>";
+	var totalYearCount = 0;
+	for(var i = 1970; i < 2100; i++)
+	{
+		MENU_HEADER += "<tr>";
+		MENU_HEADER += "<td onclick='setBGForYearObjectSelected(this.id); closeYearsList()' id='yearValueTableDefObject"+i+"' style='";
+		if(CURRENT_YEAR == i)
+		{
+			scrollPositionYear += (totalYearCount / 130) * 100;
+			MENU_HEADER += "background:#CCC;' ";
+		}
+		else
+		{
+			totalYearCount++;
+			MENU_HEADER += "' ";
+		}
+		MENU_HEADER += ">"+i+"</td>";
+		MENU_HEADER += "</tr>";
+	}
+	MENU_HEADER += "</table>"
+	MENU_HEADER += "</div>";	
+	MENU_HEADER += "</td>";
+	
+	MENU_HEADER += "</tr>";
+	MENU_HEADER += "</table>";
+	
+	//calendar-header
+	var CALENDAR_HEADER="<table width='100%' ";
+	CALENDAR_HEADER += "class = '"+CALENDAR_HEADER_CLASS+"' ";	
+	CALENDAR_HEADER += "cellspacing = '0' ";
+	CALENDAR_HEADER += "cellpadding = '0' ";	
+	CALENDAR_HEADER += "border = '0' >";
+	if(CALENDAR_STANDARD == 1)
+	{
+		CALENDAR_HEADER += "<tr><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th><th>Su</th></tr>";
+	}
+	else if(CALENDAR_STANDARD == 0)
+	{
+		CALENDAR_HEADER += "<tr><th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th></tr>";
+	}
+	
+	CALENDAR_HEADER += "</table>";
+	
+	if(calendarContainer == "" || calendarContainer == null)
+	{
+		return MENU_HEADER+CALENDAR_HEADER;
+	}
+	else
+	{
+		calendarHeadContainer.innerHTML = MENU_HEADER+CALENDAR_HEADER;
+	}
+	
+	document.getElementById("monthsListDivObject").onscroll = function()
+	{
+		scrollPositionMonth = ( document.getElementById("monthsListDivObject").scrollTop / document.getElementById("monthsListDivObject").scrollHeight) * 100;	
+	}
+	document.getElementById("yearsListDivObject").onscroll = function()
+	{
+		scrollPositionYear = (document.getElementById("yearsListDivObject").scrollTop / document.getElementById("yearsListDivObject").scrollHeight) * 100;
+	}
+}
+
+function drawCalendar(currMonth, currYear)
+{	
+	/*	Clear Previous CONTENT */
+	CONTENT = "";
+	calendarContainer.innerHTML = CONTENT;
+	PREVIOUS_HIGHLIGHTED_DATE = -1;
+	
+	/*	Set-up the CONTENT */
+	CONTENT += "<table ";
+	CONTENT += "class = '"+CALENDAR_CLASS+"'";
+	CONTENT += "cellspacing = '"+CELL_SPACING+"' ";
+	CONTENT += "cellpadding = '"+CELL_PADDING+"' ";
+	CONTENT += "border = '"+CALENDAR_BORDER+"' ";
+	CONTENT += "width='100%'>";
+		
+	var dateObject = new Date();
+	var prevMonth = (currMonth-1);
+	
+	PREVIOUS_SELECTED_MONTH = currMonth;
+	//PREVIOUS_SELECTED_YEAR = currYear;
+	
+	inactive_previousMonthTotalDays = getTotalDaysInMonth(prevMonth, currYear);	
+	currentMonthTotalDays = getTotalDaysInMonth(currMonth, currYear);
+		
+	if(prevMonth==-1)
+	{
+		dateObject.setYear(currYear-1);
+		prevMonth = 11;
+		dateObject.setMonth(prevMonth);	
+	}
+	else
+	{
+		dateObject.setMonth(prevMonth);
+		dateObject.setYear(currYear);
+	}
+	dateObject.setDate(inactive_previousMonthTotalDays);
+	
+	if(CALENDAR_STANDARD == 1)
+	{
+		inactive_previousMonthStartDate = inactive_previousMonthTotalDays - (dateObject.getDay()-1);
+	}
+	else if(CALENDAR_STANDARD == 0)
+	{
+		inactive_previousMonthStartDate = inactive_previousMonthTotalDays - (dateObject.getDay());
+	}
+	
+	currentMonthCurrentDate = 0;
+	successorMonthCurrentDate = 0;
+	
+	for(var i=0; i<42; i++)
+	{
+		if(i%7 == 0 && i != 0)
+		{
+			CONTENT+="</tr><tr>";
+		}
+		
+		if(inactive_previousMonthStartDate <= inactive_previousMonthTotalDays)
+		{
+			CONTENT+="<td align = 'center' onclick = 'changeCalendarDate(-1)' style='color:"+INACTIVE_DAYS_COLOR+"'>"+(inactive_previousMonthStartDate)+"</td>";
+			inactive_previousMonthStartDate += 1;
+		}
+		else if(currentMonthCurrentDate < currentMonthTotalDays)
+		{
+			currentMonthCurrentDate+=1;
+			CONTENT+="<td align = 'center' onclick=\"returnDate(this.id); highlightDate(this.id)\" ' id = '"+(currentMonthCurrentDate)+" "+getMonthName(currMonth)+", "+ currYear+ "'><b>";
+			if(currentMonthCurrentDate == TODAY.getDate() && (currMonth==TODAY.getMonth() && currYear == TODAY.getFullYear()))
+			{
+				CONTENT +="<b><u>"+currentMonthCurrentDate+"</u></b>";				
+			}
+			else
+			{
+				CONTENT +=currentMonthCurrentDate;
+			}
+			CONTENT += "</b></td>";
+		}
+		else
+		{
+			successorMonthCurrentDate += 1;
+			CONTENT+="<td align = 'center' onclick = 'changeCalendarDate(1)' style='color:"+INACTIVE_DAYS_COLOR+"'>"+(successorMonthCurrentDate)+"</td>";
+		}
+	}
+	
+	if(calendarContainer == "" || calendarContainer == null)
+	{
+		return CONTENT;
+	}
+	else
+	{
+		calendarContainer.innerHTML += CONTENT;
+	}
+}
