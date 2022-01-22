@@ -50,6 +50,8 @@ var PREVIOUS_HIGHLIGHTED_DATE = -1;
 var PREVIOUS_SELECTED_MONTH = -1;
 var PREVIOUS_SELECTED_YEAR = -1;
 
+//test comment
+
 var isMonthsListOpen=false;
 var isYearsListOpen=false;
 
