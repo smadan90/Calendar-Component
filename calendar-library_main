@@ -49,7 +49,7 @@ var TODAY_ICON = "";
 var PREVIOUS_HIGHLIGHTED_DATE = -1;
 var PREVIOUS_SELECTED_MONTH = -1;
 var PREVIOUS_SELECTED_YEAR = -1;
-var BadVar = 87555;
+var TemVar = 1245;
 
 //test comment
 
