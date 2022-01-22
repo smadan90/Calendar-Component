@@ -735,3 +735,5 @@ function drawCalendar(currMonth, currYear)
 		calendarContainer.innerHTML += CONTENT;
 	}
 }
+
+//new method to draw calendar
